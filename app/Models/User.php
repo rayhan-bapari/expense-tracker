@@ -45,4 +45,37 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function getCurrentMonthExpenses()
+    {
+        return $this->expenses()
+            ->with('category')
+            ->whereMonth('expense_date', now()->month)
+            ->whereYear('expense_date', now()->year)
+            ->orderBy('expense_date', 'desc')
+            ->get();
+    }
+
+    public function getCurrentMonthTotal()
+    {
+        return $this->expenses()
+            ->whereMonth('expense_date', now()->month)
+            ->whereYear('expense_date', now()->year)
+            ->sum('amount');
+    }
+
+    public function getCurrentMonthByCategory()
+    {
+        return $this->getCurrentMonthExpenses()
+            ->groupBy('category.name')
+            ->map(function ($expenses) {
+                return $expenses->sum('amount');
+            })
+            ->toArray();
+    }
 }
